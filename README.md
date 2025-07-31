@@ -1,6 +1,6 @@
 # Procurement Discovery Tool
 
-An AI-powered procurement discovery tool built with LangChain and LangGraph that automates vendor and partner discovery for procurement teams.
+An AI-powered procurement discovery tool built with LangChain and LangGraph that automates vendor and partner discovery for procurement teams using Azure OpenAI.
 
 ## 🚀 Features
 
@@ -9,16 +9,16 @@ An AI-powered procurement discovery tool built with LangChain and LangGraph that
 - **Global Vendor Discovery**: Identifies and ranks leading vendors using web search
 - **Regional Partner Identification**: Finds local partners and distributors
 - **Price Benchmarking**: Provides realistic market pricing analysis
-- **Comprehensive Reports**: Generates actionable procurement reports with recommendations
-- **Azure OpenAI Integration**: Supports Azure OpenAI with intelligent model selection
+- **Multi-Format Reports**: Generates reports in JSON, HTML, and Markdown formats
+- **Azure OpenAI Integration**: Full Azure OpenAI support with intelligent model selection
 - **Reasoning Model Support**: Uses o3/o3-mini models for complex analysis tasks
 
 ## 🏗️ Architecture
 
 The system uses a multi-agent architecture built on LangGraph:
 
-- **Orchestrator/Router Agent**: Manages workflow coordination
-- **Clarification Agent**: Validates and enriches input requirements (GPT-4)
+- **Orchestrator Agent**: Manages workflow coordination and state transitions
+- **Clarification Agent**: Validates and enriches input requirements (GPT-4.1)
 - **Description Agent**: Generates comprehensive service descriptions (o3/o3-mini)
 - **Search Agent**: Discovers vendors and partners using Tavily search (o3/o3-mini)
 - **Report Generation Agent**: Compiles comprehensive procurement reports (o3/o3-mini)
@@ -26,7 +26,7 @@ The system uses a multi-agent architecture built on LangGraph:
 ### 🧠 Intelligent Model Selection
 
 The system automatically selects the best model for each task:
-- **Standard Tasks**: GPT-4 for input validation and basic processing
+- **Standard Tasks**: GPT-4.1 for input validation and basic processing
 - **Analysis Tasks**: o3/o3-mini for complex reasoning and analysis
 - **Search Tasks**: o3/o3-mini for sophisticated search result interpretation
 
@@ -35,92 +35,150 @@ The system automatically selects the best model for each task:
 ### Prerequisites
 
 - Python 3.9 or higher
+- [uv](https://docs.astral.sh/uv/) package manager (recommended) or pip
 - Azure OpenAI resource with deployed models:
-  - GPT-4 (gpt-4) for standard tasks
-  - o3-mini (o3-mini) for reasoning tasks
+  - GPT-4 (deployment name: `gpt-4.1`) for standard tasks
+  - o3-mini (deployment name: `o3`) for reasoning tasks
 - Tavily API key (for web search)
 
 ### Installation
 
-1. Clone the repository:
+1. Install uv (if not already installed):
 ```bash
-git clone <repository-url>
-cd procurement-discovery
+# On Windows
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# On macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-2. Install dependencies:
+2. Clone the repository:
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/cpich3g/procurement-discovery-copilot.git
+cd procurement-discovery-copilot
 ```
 
-3. Set up environment variables:
+3. Create virtual environment and install dependencies:
+```bash
+# Create virtual environment with uv
+uv venv
+
+# Activate virtual environment
+# On Windows
+.venv\Scripts\activate
+# On macOS/Linux
+source .venv/bin/activate
+
+# Install dependencies
+uv sync
+```
+
+4. Set up environment variables:
 ```bash
 # Copy the example environment file
 cp .env.example .env
 
-# Edit .env with your credentials:
-# - AZURE_OPENAI_API_KEY: Your Azure OpenAI API key
-# - AZURE_OPENAI_ENDPOINT: Your Azure OpenAI endpoint
-# - TAVILY_API_KEY: Your Tavily search API key
-# - Model deployment names in Azure OpenAI
+# Edit .env with your credentials (see Configuration section below)
 ```
 
-4. Test the integration:
+### Alternative Installation (using pip)
+
+If you prefer using pip:
+
 ```bash
-python test_azure_integration.py
-```
+# Create virtual environment
+python -m venv .venv
+
+# Activate virtual environment
+# On Windows
+.venv\Scripts\activate
+# On macOS/Linux
+source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
-```bash
-cp .env.example .env
-# Edit .env and add your Azure OpenAI configuration
+### Configuration
+
+Create a `.env` file with the following settings:
+
+```env
+# Azure OpenAI Configuration
+AZURE_OPENAI_API_KEY=your_azure_openai_api_key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+
+# Model Deployment Names in Azure OpenAI
+LLM_MODEL=gpt-4.1
+REASONING_MODEL=o3
+
+# Search Configuration
+TAVILY_API_KEY=your_tavily_api_key
+
+# Optional Settings
+LLM_TEMPERATURE=0.1
+LLM_MAX_TOKENS=20000
+REASONING_MAX_COMPLETION_TOKENS=40000
+USE_REASONING_MODEL_FOR_ANALYSIS=true
+USE_REASONING_MODEL_FOR_COMPLEX_SEARCH=true
 ```
 
-### Usage
+## 🎯 Usage
 
-#### Command Line Interface
+### Command Line Interface
 
 Basic usage:
 ```bash
+# Using uv (recommended)
+uv run python -m src.main "Cloud Storage" "United States"
+
+# Or with activated virtual environment
 python -m src.main "Cloud Storage" "United States"
 ```
 
 With additional details:
 ```bash
-python -m src.main "ERP Software" "Germany" --details "Manufacturing company with 500 employees"
+uv run python -m src.main "ERP Software" "Germany" --details "Manufacturing company with 500 employees"
 ```
 
 Save results to different formats:
 ```bash
 # JSON format (default)
-python -m src.main "Marketing Automation" "Canada" --output results.json
+uv run python -m src.main "Marketing Automation" "Canada" --output results.json
 
 # HTML report with professional styling
-python -m src.main "CRM Software" "UK" --output report.html
+uv run python -m src.main "CRM Software" "UK" --output report.html
 
 # Markdown documentation
-python -m src.main "Video Conferencing" "Australia" --output summary.md
+uv run python -m src.main "Video Conferencing" "Australia" --output summary.md
 ```
 
-#### Python API
+### Python API
 
 ```python
 from src.main import ProcurementDiscoveryApp
 
 app = ProcurementDiscoveryApp()
 
+# Synchronous usage
 results = app.discover(
-    service_name="Cloud Storage",
+    service_name="Enterprise CRM Software",
+    country="Germany",
+    additional_details="Manufacturing company with 500 employees"
+)
+
+# Save to file
+app.discover(
+    service_name="Cloud Storage", 
     country="United States",
-    additional_details="Enterprise-grade with compliance requirements"
+    output_file="cloud_storage_report.html"
 )
 
 print(results)
 ```
 
-#### Async Usage
+### Async Usage
 
 ```python
 import asyncio
@@ -131,7 +189,8 @@ async def main():
     
     results = await app.adiscover(
         service_name="CRM Software", 
-        country="United Kingdom"
+        country="United Kingdom",
+        additional_details="Enterprise-grade with GDPR compliance"
     )
     
     return results
@@ -139,144 +198,272 @@ async def main():
 results = asyncio.run(main())
 ```
 
-## 🔧 Configuration
-
-The application can be configured via environment variables in the `.env` file:
-
-### Required Settings
-
-- `AZURE_OPENAI_API_KEY`: Your Azure OpenAI API key
-- `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint URL
-- `TAVILY_API_KEY`: Your Tavily search API key
-
-### Model Configuration
-
-- `LLM_MODEL`: Azure deployment name for GPT-4 (default: gpt-4)
-- `REASONING_MODEL`: Azure deployment name for reasoning model (default: o3-mini)
-- `LLM_TEMPERATURE`: Standard model temperature (default: 0.1)
-- `REASONING_TEMPERATURE`: Reasoning model temperature (default: 0.0)
-
-### Model Selection Settings
-
-- `USE_REASONING_MODEL_FOR_ANALYSIS`: Use o3/o3-mini for analysis tasks (default: true)
-- `USE_REASONING_MODEL_FOR_COMPLEX_SEARCH`: Use o3/o3-mini for search analysis (default: true)
-
-### Optional Settings
-
-- `AZURE_OPENAI_API_VERSION`: API version (default: 2024-02-15-preview)
-- `LLM_MAX_TOKENS`: Maximum tokens for standard model (default: 2000)
-- `REASONING_MAX_TOKENS`: Maximum tokens for reasoning model (default: 4000)
-- `SEARCH_MAX_RESULTS`: Maximum search results per query (default: 10)
-- `WORKFLOW_MAX_RETRIES`: Maximum retry attempts (default: 3)
-
-### 🔄 Migration from OpenAI
-
-If you're migrating from OpenAI to Azure OpenAI, see the [Azure Migration Guide](AZURE_MIGRATION_GUIDE.md) for detailed instructions.
-
-## Output Format
+## � Output Format
 
 The tool generates comprehensive reports including:
 
 ### Executive Summary
 - High-level overview and key recommendations
-- Strategic implications and approach
+- Strategic implications and business case
+- Cost analysis and vendor comparison
 
-### Vendor Analysis
-- Ranked list of global vendors
-- Detailed vendor profiles and capabilities
+### Service Analysis
+- Detailed technical specifications
+- Key features and requirements
+- Technical architecture and compliance needs
+
+### Vendor Rankings
+- Scored vendor comparison (out of 100)
+- Detailed vendor profiles with strengths/weaknesses
 - Fit assessment for specific requirements
+- Contact and pricing information
 
 ### Partner Recommendations  
 - Regional partners and distributors
 - Local implementation specialists
-- Contact information and priorities
+- Partner capabilities and experience
+- Contact priorities and recommendations
 
 ### Price Benchmarking
 - Market price ranges and estimates
-- Total cost of ownership factors
+- Total cost of ownership breakdown
 - Budget planning recommendations
+- Cost factors and considerations
 
 ### Implementation Roadmap
-- Phase-by-phase approach
+- Phase-by-phase implementation approach
 - Timeline estimates and milestones
-- Resource requirements
+- Resource requirements and dependencies
+- Risk mitigation strategies
 
-## Project Structure
+### Risk Assessment
+- Technology, vendor, and implementation risks
+- Market and compliance considerations
+- Mitigation strategies for each risk category
+
+## 🏗️ Project Structure
 
 ```
-procurement-discovery/
+procurement-discovery-copilot/
 ├── src/
-│   ├── agents/           # Individual agent implementations
-│   ├── config/           # Configuration management
-│   ├── models/           # Data models and state definitions
-│   ├── tools/            # Search and utility tools
-│   ├── utils/            # Utility functions
-│   ├── workflow/         # LangGraph workflow implementation
-│   └── main.py           # Main application interface
-├── requirements.txt      # Python dependencies
-├── .env.example         # Environment variable template
-└── README.md            # This file
+│   ├── agents/              # Multi-agent system
+│   │   ├── clarification_agent.py    # Input validation & clarification
+│   │   ├── description_agent.py      # Service description generation
+│   │   ├── orchestrator.py           # Workflow coordination
+│   │   ├── report_agent.py           # Report compilation
+│   │   └── search_agent.py           # Vendor/partner discovery
+│   ├── config/
+│   │   └── settings.py      # Configuration management
+│   ├── models/
+│   │   └── state.py         # Data models and workflow state
+│   ├── tools/
+│   │   └── search_tools.py  # Tavily search integration
+│   ├── utils/
+│   │   ├── llm_factory.py   # Azure OpenAI model management
+│   │   ├── logging.py       # Logging configuration
+│   │   └── output_formatter.py  # Multi-format report generation
+│   ├── workflow/
+│   │   └── procurement_workflow.py  # LangGraph workflow
+│   └── main.py              # Main application interface
+├── .env.example             # Environment variable template
+├── .gitignore              # Git ignore rules
+├── pyproject.toml          # Modern Python packaging
+├── requirements.txt        # Python dependencies
+└── README.md               # This file
 ```
 
-## Development
+## 🔧 Advanced Configuration
 
-### Running Tests
+### Azure OpenAI Model Settings
+
+The application supports fine-tuned control over model behavior:
+
+```env
+# Standard Model (GPT-4.1) Settings
+LLM_MODEL=gpt-4.1
+LLM_TEMPERATURE=0.1
+LLM_MAX_TOKENS=20000
+
+# Reasoning Model (o3) Settings
+REASONING_MODEL=o3
+REASONING_MAX_COMPLETION_TOKENS=40000
+# Note: o3 models don't support temperature parameter
+
+# Task-specific Model Selection
+USE_REASONING_MODEL_FOR_ANALYSIS=true
+USE_REASONING_MODEL_FOR_COMPLEX_SEARCH=true
+```
+
+### Search Configuration
+
+```env
+# Tavily Search Settings
+TAVILY_API_KEY=your_tavily_api_key
+SEARCH_MAX_RESULTS=10
+
+# Workflow Settings
+WORKFLOW_MAX_RETRIES=3
+```
+
+### Logging Configuration
+
+```env
+# Set logging level (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=INFO
+```
+
+## 🧪 Testing
+
+Test the system with a quick example:
 
 ```bash
-pytest tests/
+# Using uv
+uv run python -c "
+from src.main import ProcurementDiscoveryApp
+app = ProcurementDiscoveryApp()
+result = app.discover('CRM Software', 'Germany', 'Manufacturing company')
+print('✅ System working correctly!')
+"
+
+# Or with activated virtual environment
+python -c "
+from src.main import ProcurementDiscoveryApp
+app = ProcurementDiscoveryApp()
+result = app.discover('CRM Software', 'Germany', 'Manufacturing company')
+print('✅ System working correctly!')
+"
 ```
 
-### Code Formatting
+Generate a test report:
 
 ```bash
-black src/
-flake8 src/
+# Using uv
+uv run python -m src.main "Enterprise CRM Software" "Germany" --details "Manufacturing company with 500 employees" --output test_report.html
+
+# Or with activated virtual environment
+python -m src.main "Enterprise CRM Software" "Germany" --details "Manufacturing company with 500 employees" --output test_report.html
 ```
 
-### Adding New Agents
-
-1. Create agent class in `src/agents/`
-2. Implement process method following the pattern
-3. Add to workflow in `src/workflow/procurement_workflow.py`
-4. Update state models if needed
-
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **API Key Errors**: Ensure all required API keys are set in `.env`
-2. **Rate Limits**: The tool implements automatic retry with exponential backoff
-3. **Search Quality**: Low-quality results may indicate need for more specific requirements
+1. **Azure OpenAI Authentication Errors**
+   - Verify `AZURE_OPENAI_API_KEY` and `AZURE_OPENAI_ENDPOINT` in `.env`
+   - Ensure your Azure resource has the required model deployments
 
-### Logging
+2. **Model Deployment Issues**
+   - Confirm deployment names match `LLM_MODEL` and `REASONING_MODEL` settings
+   - Check model availability in your Azure region
 
-Enable verbose logging for debugging:
-```bash
-python -m src.main "Service Name" "Country" --verbose
+3. **o3 Model Parameter Warnings**
+   - Warning about `max_completion_tokens` is expected for o3 models
+   - o3 models don't support temperature parameter (automatically handled)
+
+4. **Search Quality Issues**
+   - Verify `TAVILY_API_KEY` is valid
+   - Provide more specific service descriptions for better results
+
+5. **Rate Limiting**
+   - The system implements automatic retry with exponential backoff
+   - Consider increasing quotas in Azure OpenAI if needed
+
+### Enable Debug Logging
+
+For detailed troubleshooting information:
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+from src.main import ProcurementDiscoveryApp
+app = ProcurementDiscoveryApp()
+# ... your code
 ```
 
-## Contributing
+## 🚀 Development
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+### Setting up Development Environment
 
-## License
+1. Clone and set up with uv:
+```bash
+git clone https://github.com/cpich3g/procurement-discovery-copilot.git
+cd procurement-discovery-copilot
+
+# Create virtual environment
+uv venv
+
+# Activate virtual environment
+# On Windows
+.venv\Scripts\activate
+# On macOS/Linux
+source .venv/bin/activate
+
+# Install project in development mode with all dependencies
+uv sync --dev
+```
+
+2. Install additional development tools:
+```bash
+uv add --dev pytest black flake8 mypy
+```
+
+### Code Quality
+
+Format code:
+```bash
+uv run black src/
+```
+
+Lint code:
+```bash
+uv run flake8 src/
+```
+
+Type checking:
+```bash
+uv run mypy src/
+```
+
+Run tests:
+```bash
+uv run pytest
+```
+
+### Adding New Features
+
+1. **New Agents**: Create in `src/agents/` following existing patterns
+2. **New Tools**: Add to `src/tools/` with proper integration
+3. **Workflow Changes**: Update `src/workflow/procurement_workflow.py`
+4. **Output Formats**: Extend `src/utils/output_formatter.py`
+
+## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Support
+## 🤝 Contributing
 
-For questions and support, please open an issue in the repository.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes and add tests
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
-## Roadmap
+## 📞 Support
 
-- [ ] Web UI interface
-- [ ] Additional search providers
-- [ ] Integration with procurement systems
-- [ ] Advanced analytics and reporting
-- [ ] Multi-language support
-- [ ] Vendor comparison matrices
+- **Issues**: Open an issue on GitHub for bugs or feature requests
+- **Discussions**: Use GitHub Discussions for questions and community support
+- **Documentation**: Check this README and code comments for detailed information
+
+## 🗺️ Roadmap
+
+- [ ] Web UI interface with React/FastAPI
+- [ ] Additional search providers (Google, Bing)
+- [ ] Integration with procurement systems (SAP Ariba, Oracle)
+- [ ] Advanced analytics and comparison matrices
+- [ ] Multi-language support for global procurement
 - [ ] RFP generation assistance
+- [ ] Vendor risk assessment integration
+- [ ] Real-time price monitoring
+- [ ] Contract analysis and recommendations
